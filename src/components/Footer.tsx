@@ -42,8 +42,8 @@ const Footer = () => {
   }
 
   return (
-    <footer className="bg-apple-text dark:bg-black text-white border-t border-gray-200 dark:border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <footer className="bg-apple-text dark:bg-black text-white border-t border-gray-200 dark:border-gray-800 pb-safe-bottom">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pl-safe-left pr-safe-right">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Company Info */}
           <motion.div
@@ -181,6 +181,10 @@ const Footer = () => {
         animate={{ scale: 1 }}
         transition={{ delay: 1, type: "spring" }}
         className="fixed bottom-6 right-6 z-50"
+        style={{
+          bottom: `calc(1.5rem + env(safe-area-inset-bottom))`,
+          right: `calc(1.5rem + env(safe-area-inset-right))`
+        }}
       >
         <motion.button
           whileHover={{ scale: 1.1 }}

@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#007AFF' },
     { media: '(prefers-color-scheme: dark)', color: '#0A84FF' },
@@ -27,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-white dark:bg-black text-apple-text dark:text-apple-text-dark transition-colors duration-300">
+      <body className="bg-white dark:bg-black text-apple-text dark:text-apple-text-dark transition-colors duration-300 pl-safe-left pr-safe-right">
         <ThemeProvider>
           {children}
         </ThemeProvider>

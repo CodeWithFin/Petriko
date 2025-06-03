@@ -26,8 +26,8 @@ const Header = () => {
   ]
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-black/10 dark:border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 pt-safe-top">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-safe-left pr-safe-right">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <motion.h1 
@@ -93,7 +93,7 @@ const Header = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-white/95 dark:bg-black/95 backdrop-blur-lg border-b border-black/10 dark:border-white/10"
           >
-            <div className="px-4 py-4 space-y-4">
+            <div className="px-4 py-4 space-y-4 pl-safe-left pr-safe-right">
               {navigation.map((item) => (
                 <button
                   key={item.name}
