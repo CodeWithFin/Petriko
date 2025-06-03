@@ -85,7 +85,7 @@ const Testimonials = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-body-mobile md:text-body-desktop text-apple-text-secondary dark:text-apple-text-secondary-dark max-w-3xl mx-auto mb-12"
           >
-            Don't just take our word for it. Here's what our clients have to say about 
+            Don&apos;t just take our word for it. Here&apos;s what our clients have to say about 
             their experience working with Petriko Designers.
           </motion.p>
 
@@ -161,7 +161,7 @@ const Testimonials = () => {
 
                 {/* Testimonial Text */}
                 <blockquote className="text-xl lg:text-2xl text-apple-text dark:text-apple-text-dark font-medium leading-relaxed mb-8 max-w-4xl mx-auto">
-                  "{filteredTestimonials[currentIndex].text}"
+                  &ldquo;{filteredTestimonials[currentIndex].text}&rdquo;
                 </blockquote>
 
                 {/* Client Info */}
@@ -261,7 +261,7 @@ const Testimonials = () => {
 
               {/* Testimonial Text */}
               <p className="text-apple-text-secondary dark:text-apple-text-secondary-dark text-sm leading-relaxed mb-4 line-clamp-4">
-                "{testimonial.text}"
+                &ldquo;{testimonial.text}&rdquo;
               </p>
 
               {/* Project Info */}

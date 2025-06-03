@@ -31,6 +31,8 @@ const Portfolio = () => {
     setIsModalOpen(false)
     setSelectedProject(null)
   }
+
+  const localProjects = [
     {
       id: 4,
       title: 'Ruiru Family Home',
@@ -84,8 +86,8 @@ const Portfolio = () => {
   ]
 
   const filteredProjects = activeFilter === 'all' 
-    ? projects 
-    : projects.filter(project => project.category === activeFilter)
+    ? localProjects 
+    : localProjects.filter(project => project.category === activeFilter)
 
   const containerVariants = {
     hidden: { opacity: 0 },
