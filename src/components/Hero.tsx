@@ -35,17 +35,17 @@ const Hero = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.15)_1px,transparent_0)] [background-size:20px_20px]" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 py-8 sm:py-12">
         <motion.div
           variants={staggerChildren}
           initial="initial"
           animate="animate"
-          className="space-y-8"
+          className="space-y-6 sm:space-y-8"
         >
           {/* Main Headline */}
           <motion.h1
             variants={fadeInUp}
-            className="text-hero-mobile md:text-hero-desktop font-bold text-apple-text dark:text-apple-text-dark text-balance leading-tight"
+            className="text-hero-mobile md:text-hero-desktop font-bold text-apple-text dark:text-apple-text-dark text-balance leading-tight px-2 sm:px-0"
           >
             Beautiful spaces.{' '}
             <span className="text-apple-blue dark:text-apple-blue-dark">

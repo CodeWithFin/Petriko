@@ -22,7 +22,7 @@ module.exports = {
         'apple': ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       fontSize: {
-        'hero-mobile': ['32px', '38px'],
+        'hero-mobile': ['40px', '46px'],
         'hero-desktop': ['56px', '64px'],
         'h2-mobile': ['28px', '34px'],
         'h2-desktop': ['48px', '52px'],
