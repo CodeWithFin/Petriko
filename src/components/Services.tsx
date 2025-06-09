@@ -92,7 +92,7 @@ const Services = () => {
   }
 
   return (
-    <section id="services" className="py-20 lg:py-32 bg-white dark:bg-black">
+    <section id="services" className="py-20 lg:py-32 bg-apple-gray/30 dark:bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={ref} className="text-center mb-16">
           <motion.h2
@@ -127,7 +127,7 @@ const Services = () => {
                 key={service.title}
                 variants={cardVariants}
                 whileHover={{ y: -8, scale: 1.02 }}
-                className="group relative bg-white/80 dark:bg-apple-gray-dark/50 apple-blur rounded-2xl p-6 border border-gray-200/50 dark:border-white/10 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+                className="group relative bg-white dark:bg-apple-gray-dark rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl dark:hover:shadow-2xl transition-all duration-300 cursor-pointer"
               >
                 {/* Service Icon */}
                 <div className="mb-4">
@@ -169,7 +169,7 @@ const Services = () => {
                 </motion.button>
 
                 {/* Hover Glow Effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-apple-blue/5 to-apple-gold/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-apple-blue/5 to-apple-gold/5 dark:from-apple-blue-dark/10 dark:to-apple-gold/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               </motion.div>
             )
           })}
@@ -197,3 +197,4 @@ const Services = () => {
 }
 
 export default Services
+7

@@ -30,7 +30,7 @@ export const testimonials: Testimonial[] = [
     role: "Operations Manager",
     company: "DCI Headquarters",
     location: "Nairobi",
-    image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
     rating: 5,
     text: "Working with Petriko on our headquarters was exceptional. They understood our corporate requirements and delivered a space that perfectly represents our brand while maintaining functionality.",
     project: "DCI Headquarters",

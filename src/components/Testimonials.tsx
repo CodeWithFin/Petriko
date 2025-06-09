@@ -1,27 +1,54 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef } from 'react'
 import { useInView } from 'framer-motion'
-import { Star, Quote, ChevronLeft, ChevronRight, Building2, Home, Award } from 'lucide-react'
+import { Star, Quote, ChevronLeft, ChevronRight, Building2, Home, Award, Wifi, WifiOff, Plus, X } from 'lucide-react'
 import Image from 'next/image'
 import { testimonials, getFeaturedTestimonials, Testimonial } from '../data/testimonials'
+import { useRealtimeReviews } from '../hooks/useRealtimeReviews'
+import ReviewForm from './ReviewForm'
 
 const Testimonials = () => {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, amount: 0.2 })
   const [currentIndex, setCurrentIndex] = useState(0)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  
+  // Real-time reviews hook
+  const { reviews: realtimeReviews, isConnected, addReview } = useRealtimeReviews()
+
+  const handleReviewSubmit = (newReview: any) => {
+    addReview(newReview)
+    setShowReviewForm(false)
+    // Optionally switch to show the new review
+    setActiveFilter('realtime')
+  }
 
   const filters = [
     { id: 'all', name: 'All Reviews', icon: Award },
     { id: 'residential', name: 'Residential', icon: Home },
     { id: 'commercial', name: 'Commercial', icon: Building2 },
+    { id: 'realtime', name: 'Live Reviews', icon: isConnected ? Wifi : WifiOff },
   ]
 
-  const filteredTestimonials = activeFilter === 'all' 
-    ? getFeaturedTestimonials() 
-    : testimonials.filter(t => t.category === activeFilter).slice(0, 6)
+  // Combine static testimonials with real-time reviews
+  const getAllTestimonials = () => {
+    if (activeFilter === 'realtime') {
+      return realtimeReviews
+    }
+    
+    const combined = [...realtimeReviews, ...testimonials]
+    
+    if (activeFilter === 'all') {
+      return combined.slice(0, 6)
+    }
+    
+    return combined.filter(t => t.category === activeFilter).slice(0, 6)
+  }
+
+  const filteredTestimonials = getAllTestimonials()
 
   const nextTestimonial = () => {
     setCurrentIndex((prevIndex) => 
@@ -83,11 +110,29 @@ const Testimonials = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-body-mobile md:text-body-desktop text-apple-text-secondary dark:text-apple-text-secondary-dark max-w-3xl mx-auto mb-12"
+            className="text-body-mobile md:text-body-desktop text-apple-text-secondary dark:text-apple-text-secondary-dark max-w-3xl mx-auto mb-8"
           >
             Don&apos;t just take our word for it. Here&apos;s what our clients have to say about 
             their experience working with Petriko Designers.
           </motion.p>
+
+          {/* Real-time Status Indicator */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex items-center justify-center space-x-2 mb-8"
+          >
+            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {isConnected ? 'Live reviews connected' : 'Offline mode'}
+            </span>
+            {realtimeReviews.length > 0 && (
+              <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
+                {realtimeReviews.length} new review{realtimeReviews.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </motion.div>
 
           {/* Filter Buttons */}
           <motion.div
@@ -118,6 +163,24 @@ const Testimonials = () => {
                 </motion.button>
               )
             })}
+          </motion.div>
+
+          {/* Submit Review Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="flex justify-center mb-8"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowReviewForm(true)}
+              className="flex items-center space-x-2 px-8 py-4 bg-apple-blue hover:bg-blue-700 dark:bg-apple-blue-dark dark:hover:bg-blue-600 text-white rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              <Plus size={20} />
+              <span>Share Your Experience</span>
+            </motion.button>
           </motion.div>
         </div>
 
@@ -294,6 +357,47 @@ const Testimonials = () => {
           </motion.button>
         </motion.div>
       </div>
+
+      {/* Review Form Modal */}
+      <AnimatePresence>
+        {showReviewForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowReviewForm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Share Your Experience
+                </h3>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowReviewForm(false)}
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <X size={24} className="text-gray-500 dark:text-gray-400" />
+                </motion.button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                <ReviewForm onSubmit={handleReviewSubmit} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }

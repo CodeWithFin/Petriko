@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { 
   Phone, 
@@ -12,16 +12,26 @@ import {
   Send, 
   CheckCircle,
   Upload,
-  X
+  X,
+  FileImage,
+  AlertCircle,
+  Eye
 } from 'lucide-react'
 
 interface FormData {
   name: string
   email: string
   phone: string
+  location: string
   projectType: string
   message: string
   budget: string
+}
+
+interface UploadedFile {
+  file: File
+  preview?: string
+  id: string
 }
 
 const Contact = () => {
@@ -29,9 +39,30 @@ const Contact = () => {
   const isInView = useInView(ref, { once: true, amount: 0.2 })
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [selectedServiceArea, setSelectedServiceArea] = useState<any>(null)
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormData>()
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<FormData>()
+
+  // Check for service area information from ServiceAreaMap
+  useEffect(() => {
+    const areaInfo = sessionStorage.getItem('selectedServiceArea')
+    if (areaInfo) {
+      try {
+        const parsedInfo = JSON.parse(areaInfo)
+        setSelectedServiceArea(parsedInfo)
+        setValue('location', `${parsedInfo.name}, ${parsedInfo.region}`)
+        // Clear the session storage after using it
+        sessionStorage.removeItem('selectedServiceArea')
+      } catch (error) {
+        console.error('Error parsing service area info:', error)
+      }
+    }
+  }, [setValue])
 
   const contactMethods = [
     {
@@ -86,22 +117,136 @@ const Contact = () => {
     'Over KSh 2,000,000'
   ]
 
-  const onSubmit = (data: FormData) => {
-    console.log('Form submitted:', data)
-    setIsSubmitted(true)
-    reset()
-    setCurrentStep(1)
-    setUploadedFiles([])
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true)
+    setUploadError(null)
+    
+    try {
+      // Create FormData for API submission
+      const formData = new window.FormData()
+      
+      // Add form fields
+      formData.append('name', data.name)
+      formData.append('email', data.email)
+      formData.append('phone', data.phone)
+      formData.append('location', data.location)
+      formData.append('projectType', data.projectType)
+      formData.append('message', data.message)
+      formData.append('budget', data.budget || '')
+      
+      // Add uploaded files
+      uploadedFiles.forEach((uploadedFile) => {
+        formData.append('files', uploadedFile.file)
+      })
+
+      // Submit to API
+      const response = await fetch('/api/quote-request', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Clean up preview URLs
+        uploadedFiles.forEach(file => {
+          if (file.preview) {
+            URL.revokeObjectURL(file.preview)
+          }
+        })
+        
+        setIsSubmitted(true)
+        reset()
+        setCurrentStep(1)
+        setUploadedFiles([])
+        setUploadError(null)
+        setPreviewImage(null)
+      } else {
+        throw new Error(result.message || 'Failed to send quote request')
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      
+      // Show the specific error message from the API if available
+      if (error instanceof Error) {
+        setUploadError(error.message)
+      } else {
+        setUploadError('Failed to send quote request. Please try again or contact us directly at petricolimited@gmail.com or call 0726 452055.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
-    setUploadedFiles(prev => [...prev, ...files])
+    processFiles(files)
+  }
+
+  const processFiles = (files: File[]) => {
+    // Filter for image files and limit size
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        setUploadError('Only image files are allowed')
+        return false
+      }
+      if (file.size > maxSize) {
+        setUploadError(`File ${file.name} is too large. Maximum size is 10MB.`)
+        return false
+      }
+      return true
+    })
+
+    if (validFiles.length === 0) return
+
+    setUploadError(null)
+    const newUploadedFiles: UploadedFile[] = validFiles.map(file => ({
+      file,
+      id: Math.random().toString(36).substr(2, 9),
+      preview: URL.createObjectURL(file)
+    }))
+    setUploadedFiles(prev => [...prev, ...newUploadedFiles])
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDragOver(false)
+    const files = Array.from(event.dataTransfer.files)
+    processFiles(files)
   }
 
   const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+    setUploadedFiles(prev => {
+      const fileToRemove = prev[index]
+      // Clean up preview URL to prevent memory leaks
+      if (fileToRemove.preview) {
+        URL.revokeObjectURL(fileToRemove.preview)
+      }
+      return prev.filter((_, i) => i !== index)
+    })
   }
+
+  // Clean up preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      uploadedFiles.forEach(file => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview)
+        }
+      })
+    }
+  }, [uploadedFiles])
 
   const nextStep = () => {
     if (currentStep < 4) setCurrentStep(currentStep + 1)
@@ -295,6 +440,33 @@ const Contact = () => {
                     />
                     {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
                   </div>
+
+                  <div>
+                    <input
+                      {...register('location', { required: 'Location is required' })}
+                      type="text"
+                      placeholder="Project Location (City, County)"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-apple-gray-dark text-apple-text dark:text-apple-text-dark focus:border-apple-blue dark:focus:border-apple-blue-dark focus:outline-none transition-colors"
+                    />
+                    {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>}
+                  </div>
+
+                  {selectedServiceArea && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          Service Area Selected
+                        </span>
+                      </div>
+                      <p className="text-sm text-blue-700 dark:text-blue-200">
+                        {selectedServiceArea.name} - {selectedServiceArea.region}
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                        Our local team will handle your project: {selectedServiceArea.phone}
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -360,10 +532,24 @@ const Contact = () => {
                     Upload photos of your space or inspiration images (optional)
                   </p>
 
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center">
-                    <Upload size={48} className="mx-auto text-apple-blue dark:text-apple-blue-dark mb-4" />
+                  <div 
+                    className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                      isDragOver 
+                        ? 'border-apple-blue bg-apple-blue/5 dark:bg-apple-blue-dark/5' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <Upload size={48} className={`mx-auto mb-4 ${
+                      isDragOver ? 'text-apple-blue' : 'text-apple-blue dark:text-apple-blue-dark'
+                    }`} />
                     <p className="text-apple-text dark:text-apple-text-dark mb-2">
-                      Drag and drop files here, or click to select
+                      {isDragOver ? 'Drop files here' : 'Drag and drop files here, or click to select'}
+                    </p>
+                    <p className="text-sm text-apple-text-secondary dark:text-apple-text-secondary-dark mb-4">
+                      Supported formats: JPG, PNG, GIF • Max size: 10MB per file
                     </p>
                     <input
                       type="file"
@@ -381,20 +567,46 @@ const Contact = () => {
                     </label>
                   </div>
 
+                  {uploadError && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      <span className="text-sm text-red-700 dark:text-red-300">{uploadError}</span>
+                    </div>
+                  )}
+
                   {uploadedFiles.length > 0 && (
                     <div className="space-y-2">
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
-                          <span className="text-sm text-apple-text dark:text-apple-text-dark">
-                            {file.name}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(index)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <X size={16} />
-                          </button>
+                      {uploadedFiles.map((uploadedFile, index) => (
+                        <div key={uploadedFile.id || index} className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
+                          <div className="flex items-center space-x-3">
+                            <FileImage size={16} className="text-apple-blue dark:text-apple-blue-dark" />
+                            <span className="text-sm text-apple-text dark:text-apple-text-dark">
+                              {uploadedFile.file.name}
+                            </span>
+                            <span className="text-xs text-apple-text-secondary dark:text-apple-text-secondary-dark">
+                              ({(uploadedFile.file.size / 1024 / 1024).toFixed(1)} MB)
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {uploadedFile.preview && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewImage(uploadedFile.preview!)}
+                                className="text-apple-blue hover:text-blue-700 dark:text-apple-blue-dark"
+                                title="Preview image"
+                              >
+                                <Eye size={16} />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeFile(index)}
+                              className="text-red-500 hover:text-red-700"
+                              title="Remove file"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -425,6 +637,13 @@ const Contact = () => {
 
               {/* Navigation Buttons */}
               <div className="flex justify-between pt-6">
+                {uploadError && (
+                  <div className="w-full mb-4 flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                    <span className="text-sm text-red-700 dark:text-red-300">{uploadError}</span>
+                  </div>
+                )}
+                
                 {currentStep > 1 && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -454,10 +673,20 @@ const Contact = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       type="submit"
-                      className="px-8 py-3 bg-apple-blue hover:bg-blue-700 dark:bg-apple-blue-dark text-white rounded-full font-semibold transition-all duration-200 flex items-center"
+                      disabled={isSubmitting}
+                      className="px-8 py-3 bg-apple-blue hover:bg-blue-700 dark:bg-apple-blue-dark text-white rounded-full font-semibold transition-all duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Submit Request
-                      <Send size={16} className="ml-2" />
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          Submit Request
+                          <Send size={16} className="ml-2" />
+                        </>
+                      )}
                     </motion.button>
                   )}
                 </div>
@@ -465,6 +694,40 @@ const Contact = () => {
             </form>
           </motion.div>
         </div>
+
+        {/* Image Preview Modal */}
+        {previewImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+            onClick={() => setPreviewImage(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="relative max-w-4xl max-h-[80vh] bg-white dark:bg-apple-gray-dark rounded-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute top-4 right-4 z-10">
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="w-full h-full object-contain"
+              />
+            </motion.div>
+          </motion.div>
+        )}
       </div>
     </section>
   )
