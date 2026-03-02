@@ -1,113 +1,109 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Sun, Moon, Menu, X } from 'lucide-react'
-import { useTheme } from './ThemeProvider'
+import { useState, useEffect } from 'react'
 
 const Header = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const { theme, toggleTheme, mounted } = useTheme()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-      setIsOpen(false)
-    }
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth' })
+    setIsMenuOpen(false)
   }
 
-  const navigation = [
-    { name: 'Services', href: '#services' },
-    { name: 'Portfolio', href: '#portfolio' },
-    { name: 'Testimonials', href: '#testimonials' },
-    { name: 'About', href: '#about' },
-    { name: 'Contact', href: '#contact' },
+  const navLinks = [
+    { label: 'Services', id: 'services' },
+    { label: 'Portfolio', id: 'portfolio' },
+    { label: 'About', id: 'about' },
+    { label: 'Contact', id: 'contact' },
   ]
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 pt-safe-top">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pl-safe-left pr-safe-right">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-2xl font-bold text-apple-text dark:text-apple-text-dark cursor-pointer"
-            onClick={() => scrollToSection('hero')}
-          >
-            Petriko
-          </motion.h1>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            {navigation.map((item) => (
-              <button
-                key={item.name}
-                onClick={() => scrollToSection(item.href.slice(1))}
-                className="text-apple-text-secondary dark:text-apple-text-secondary-dark hover:text-apple-text dark:hover:text-apple-text-dark transition-colors duration-200"
-              >
-                {item.name}
-              </button>
-            ))}
-          </nav>
-
-          {/* Right side - Theme toggle and mobile menu */}
-          <div className="flex items-center space-x-4">
-            {/* Theme Toggle */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={toggleTheme}
-              className="p-2 rounded-full bg-apple-gray/50 dark:bg-apple-gray-dark/50 hover:bg-apple-gray dark:hover:bg-apple-gray-dark transition-all duration-200"
-            >
-              {mounted ? (
-                theme === 'light' ? 
-                  <Moon size={20} className="text-apple-text dark:text-apple-text-dark" /> : 
-                  <Sun size={20} className="text-apple-text dark:text-apple-text-dark" />
-              ) : (
-                <Sun size={20} className="text-apple-text dark:text-apple-text-dark" />
-              )}
-            </motion.button>
-
-            {/* Mobile menu button */}
+    <>
+      {/* Mobile Menu Overlay */}
+      <div
+        className={`fixed inset-0 z-40 bg-[#111111] text-white flex flex-col items-center justify-center transition-transform duration-[600ms] cubic-bezier(0.16,1,0.3,1) ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}
+      >
+        <nav className="flex flex-col gap-10 text-center">
+          {navLinks.map((link) => (
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 rounded-full bg-apple-gray/50 dark:bg-apple-gray-dark/50 hover:bg-apple-gray dark:hover:bg-apple-gray-dark transition-all duration-200"
+              key={link.id}
+              onClick={() => scrollToSection(link.id)}
+              className="display-font text-4xl font-normal tracking-tight hover:text-[#b19777] transition-colors"
             >
-              {isOpen ? 
-                <X size={20} className="text-apple-text dark:text-apple-text-dark" /> : 
-                <Menu size={20} className="text-apple-text dark:text-apple-text-dark" />
-              }
+              {link.label}
             </button>
-          </div>
+          ))}
+        </nav>
+        <div className="absolute bottom-12 text-xs uppercase tracking-[0.25em] text-white/30">
+          Petriko Designers
         </div>
       </div>
 
-      {/* Mobile Navigation */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white/95 dark:bg-black/95 backdrop-blur-lg border-b border-black/10 dark:border-white/10"
+      {/* Main Nav */}
+      <nav
+        className="fixed top-0 w-full px-6 py-6 md:px-12 md:py-10 flex justify-between items-center z-50 mix-blend-exclusion text-white"
+        aria-label="Main navigation"
+      >
+        {/* Logo */}
+        <div className="flex items-center md:flex-1">
+          <button
+            onClick={() => scrollToSection('hero')}
+            className="display-font text-xl font-medium tracking-tight uppercase"
           >
-            <div className="px-4 py-4 space-y-4 pl-safe-left pr-safe-right">
-              {navigation.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => scrollToSection(item.href.slice(1))}
-                  className="block w-full text-left text-apple-text-secondary dark:text-apple-text-secondary-dark hover:text-apple-text dark:hover:text-apple-text-dark transition-colors duration-200"
-                >
-                  {item.name}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </header>
+            Petriko
+          </button>
+        </div>
+
+        {/* Desktop Nav Links */}
+        <div className="hidden md:flex gap-12 text-xs font-normal tracking-[0.25em] uppercase">
+          {navLinks.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => scrollToSection(link.id)}
+              className="hover:text-[#b19777] transition-colors"
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile Menu Button */}
+        <div className="flex md:flex-1 justify-end">
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="z-50 flex items-center justify-center md:hidden w-10 h-10 relative"
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {/* Hamburger */}
+            <svg
+              className={`absolute transition-opacity duration-300 ${isMenuOpen ? 'opacity-0' : 'opacity-100'}`}
+              width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+            >
+              <path d="M4 5h16M4 12h16M4 19h16" />
+            </svg>
+            {/* Close X */}
+            <svg
+              className={`absolute transition-opacity duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0'}`}
+              width="24" height="24" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </nav>
+    </>
   )
 }
 

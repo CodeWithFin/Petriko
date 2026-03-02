@@ -1,13 +1,12 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
-import { ThemeProvider } from '../components/ThemeProvider'
 
 export const metadata: Metadata = {
-  title: 'Petriko Designers - Beautiful spaces. Beautifully crafted.',
-  description: 'Premium interior design and painting services across Kenya since 2008. Transform your space with our expert craftsmanship.',
-  keywords: 'interior design, painting services, Kenya, premium design, home renovation',
+  title: 'Petriko Designers — Beautiful spaces, beautifully crafted',
+  description: 'Premium interior design and painting services across Kenya since 2008. Transform your space with expert craftsmanship.',
+  keywords: 'interior design, painting services, Kenya, premium design, home renovation, Nairobi',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.png',
   },
 }
 
@@ -15,10 +14,6 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#007AFF' },
-    { media: '(prefers-color-scheme: dark)', color: '#0A84FF' },
-  ],
 }
 
 export default function RootLayout({
@@ -27,11 +22,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="bg-white dark:bg-black text-apple-text dark:text-apple-text-dark transition-colors duration-300 pl-safe-left pr-safe-right">
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+    <html lang="en" className="antialiased overflow-x-clip">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
+        {children}
       </body>
     </html>
   )
