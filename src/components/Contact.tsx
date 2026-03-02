@@ -99,7 +99,7 @@ const Contact = () => {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Phone (optional)</label>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-gray-400">Phone <span className="normal-case tracking-normal text-[#b19777]">(receive SMS confirmation)</span></label>
                   <input
                     type="tel"
                     value={form.phone}
