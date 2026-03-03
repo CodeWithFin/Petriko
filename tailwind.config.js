@@ -6,35 +6,92 @@ module.exports = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {
-      colors: {
-        'petriko-cream': '#F8F8F8',
-        'petriko-dark': '#111111',
-        'petriko-gold': '#b19777',
-        'petriko-card': '#FFFFFF',
-        'petriko-border': 'rgba(0,0,0,0.06)',
-      },
-      fontFamily: {
-        'display': ['Space Grotesk', 'sans-serif'],
-        'body': ['Inter', 'sans-serif'],
-      },
-      fontSize: {
-        'hero-split': ['16vw', { lineHeight: '0.8', letterSpacing: '-0.06em' }],
-      },
-      spacing: {
-        'safe-top': 'env(safe-area-inset-top)',
-        'safe-bottom': 'env(safe-area-inset-bottom)',
-        'safe-left': 'env(safe-area-inset-left)',
-        'safe-right': 'env(safe-area-inset-right)',
-      },
-      padding: {
-        'safe-top': 'env(safe-area-inset-top)',
-        'safe-bottom': 'env(safe-area-inset-bottom)',
-        'safe-left': 'env(safe-area-inset-left)',
-        'safe-right': 'env(safe-area-inset-right)',
-      },
-    },
+  	extend: {
+  		colors: {
+  			'petriko-cream': '#F8F8F8',
+  			'petriko-dark': '#111111',
+  			'petriko-gold': '#b19777',
+  			'petriko-card': '#FFFFFF',
+  			'petriko-border': 'rgba(0,0,0,0.06)',
+  			background: 'hsl(var(--background))',
+  			foreground: 'hsl(var(--foreground))',
+  			card: {
+  				DEFAULT: 'hsl(var(--card))',
+  				foreground: 'hsl(var(--card-foreground))'
+  			},
+  			popover: {
+  				DEFAULT: 'hsl(var(--popover))',
+  				foreground: 'hsl(var(--popover-foreground))'
+  			},
+  			primary: {
+  				DEFAULT: 'hsl(var(--primary))',
+  				foreground: 'hsl(var(--primary-foreground))'
+  			},
+  			secondary: {
+  				DEFAULT: 'hsl(var(--secondary))',
+  				foreground: 'hsl(var(--secondary-foreground))'
+  			},
+  			muted: {
+  				DEFAULT: 'hsl(var(--muted))',
+  				foreground: 'hsl(var(--muted-foreground))'
+  			},
+  			accent: {
+  				DEFAULT: 'hsl(var(--accent))',
+  				foreground: 'hsl(var(--accent-foreground))'
+  			},
+  			destructive: {
+  				DEFAULT: 'hsl(var(--destructive))',
+  				foreground: 'hsl(var(--destructive-foreground))'
+  			},
+  			border: 'hsl(var(--border))',
+  			input: 'hsl(var(--input))',
+  			ring: 'hsl(var(--ring))',
+  			chart: {
+  				'1': 'hsl(var(--chart-1))',
+  				'2': 'hsl(var(--chart-2))',
+  				'3': 'hsl(var(--chart-3))',
+  				'4': 'hsl(var(--chart-4))',
+  				'5': 'hsl(var(--chart-5))'
+  			}
+  		},
+  		fontFamily: {
+  			display: [
+  				'Space Grotesk',
+  				'sans-serif'
+  			],
+  			body: [
+  				'Inter',
+  				'sans-serif'
+  			]
+  		},
+  		fontSize: {
+  			'hero-split': [
+  				'16vw',
+  				{
+  					lineHeight: '0.8',
+  					letterSpacing: '-0.06em'
+  				}
+  			]
+  		},
+  		spacing: {
+  			'safe-top': 'env(safe-area-inset-top)',
+  			'safe-bottom': 'env(safe-area-inset-bottom)',
+  			'safe-left': 'env(safe-area-inset-left)',
+  			'safe-right': 'env(safe-area-inset-right)'
+  		},
+  		padding: {
+  			'safe-top': 'env(safe-area-inset-top)',
+  			'safe-bottom': 'env(safe-area-inset-bottom)',
+  			'safe-left': 'env(safe-area-inset-left)',
+  			'safe-right': 'env(safe-area-inset-right)'
+  		},
+  		borderRadius: {
+  			lg: 'var(--radius)',
+  			md: 'calc(var(--radius) - 2px)',
+  			sm: 'calc(var(--radius) - 4px)'
+  		}
+  	}
   },
-  plugins: [],
-  darkMode: 'class',
+  plugins: [require("tailwindcss-animate")],
+  darkMode: ['class', 'class'],
 }

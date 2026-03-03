@@ -1,405 +1,99 @@
-'use client'
+"use client";
+import React from "react";
+import { motion } from "motion/react";
+import { TestimonialsColumn } from "./blocks/testimonials-columns-1";
 
-import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useRef } from 'react'
-import { useInView } from 'framer-motion'
-import { Star, Quote, ChevronLeft, ChevronRight, Building2, Home, Award, Wifi, WifiOff, Plus, X } from 'lucide-react'
-import Image from 'next/image'
-import { testimonials, getFeaturedTestimonials, Testimonial } from '../data/testimonials'
-import { useRealtimeReviews } from '../hooks/useRealtimeReviews'
-import ReviewForm from './ReviewForm'
+// Adapted testimonials for an Interior Design firm
+export const testimonials = [
+  {
+    text: "Petriko completely transformed our living space. Their attention to detail and premium finish exceeded every expectation.",
+    image: "https://randomuser.me/api/portraits/women/44.jpg",
+    name: "Sarah K.",
+    role: "Homeowner",
+  },
+  {
+    text: "Working with them was seamless. The bespoke furniture fits our office perfectly, bringing a modern yet timeless aesthetic.",
+    image: "https://randomuser.me/api/portraits/men/32.jpg",
+    name: "David M.",
+    role: "Corporate Client",
+  },
+  {
+    text: "From 3D rendering to final execution, the Petriko team was professional, transparent, and delivered ahead of schedule.",
+    image: "https://randomuser.me/api/portraits/women/68.jpg",
+    name: "Amina Hassan",
+    role: "Restaurant Owner",
+  },
+  {
+    text: "The wooden paneling and lighting design they did for our boutique hotel is absolutely stunning. Highly recommended.",
+    image: "https://randomuser.me/api/portraits/men/46.jpg",
+    name: "James Wandera",
+    role: "Hotel Manager",
+  },
+  {
+    text: "Excellent project management. They handled everything from sourcing materials to contractor coordination effortlessly.",
+    image: "https://randomuser.me/api/portraits/women/24.jpg",
+    name: "Grace N.",
+    role: "Property Developer",
+  },
+  {
+    text: "Our kitchen remodel is flawless. The cabinetry work is top-tier and the space feels incredibly functional and luxurious.",
+    image: "https://randomuser.me/api/portraits/women/12.jpg",
+    name: "Linda O.",
+    role: "Homeowner",
+  },
+  {
+    text: "They understood our vision immediately and translated it into a design that represents our brand perfectly.",
+    image: "https://randomuser.me/api/portraits/men/22.jpg",
+    name: "Farhan Siddiqui",
+    role: "Marketing Director",
+  },
+  {
+    text: "The gypsum ceilings and ambient lighting have completely changed the mood of our home. Brilliant craftsmanship.",
+    image: "https://randomuser.me/api/portraits/women/8.jpg",
+    name: "Sana Sheikh",
+    role: "Homeowner",
+  },
+  {
+    text: "Quality materials, highly skilled artisans, and a very communicative design team. Worth every penny.",
+    image: "https://randomuser.me/api/portraits/men/11.jpg",
+    name: "Kelvin T.",
+    role: "Business Owner",
+  },
+];
+
+const firstColumn = testimonials.slice(0, 3);
+const secondColumn = testimonials.slice(3, 6);
+const thirdColumn = testimonials.slice(6, 9);
 
 const Testimonials = () => {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, amount: 0.2 })
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [activeFilter, setActiveFilter] = useState('all')
-  const [showReviewForm, setShowReviewForm] = useState(false)
-  
-  // Real-time reviews hook
-  const { reviews: realtimeReviews, isConnected, addReview } = useRealtimeReviews()
-
-  const handleReviewSubmit = (newReview: any) => {
-    addReview(newReview)
-    setShowReviewForm(false)
-    // Optionally switch to show the new review
-    setActiveFilter('realtime')
-  }
-
-  const filters = [
-    { id: 'all', name: 'All Reviews', icon: Award },
-    { id: 'residential', name: 'Residential', icon: Home },
-    { id: 'commercial', name: 'Commercial', icon: Building2 },
-    { id: 'realtime', name: 'Live Reviews', icon: isConnected ? Wifi : WifiOff },
-  ]
-
-  // Combine static testimonials with real-time reviews
-  const getAllTestimonials = () => {
-    if (activeFilter === 'realtime') {
-      return realtimeReviews
-    }
-    
-    const combined = [...realtimeReviews, ...testimonials]
-    
-    if (activeFilter === 'all') {
-      return combined.slice(0, 6)
-    }
-    
-    return combined.filter(t => t.category === activeFilter).slice(0, 6)
-  }
-
-  const filteredTestimonials = getAllTestimonials()
-
-  const nextTestimonial = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === filteredTestimonials.length - 1 ? 0 : prevIndex + 1
-    )
-  }
-
-  const prevTestimonial = () => {
-    setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? filteredTestimonials.length - 1 : prevIndex - 1
-    )
-  }
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  }
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 60 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: [0.4, 0, 0.2, 1]
-      }
-    }
-  }
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        size={16}
-        className={i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
-      />
-    ))
-  }
-
   return (
-    <section id="testimonials" className="py-20 lg:py-32 bg-apple-gray/30 dark:bg-apple-gray-dark/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div ref={ref} className="text-center mb-16">
-          <motion.h2
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-            className="text-h2-mobile md:text-h2-desktop font-bold text-apple-text dark:text-apple-text-dark mb-6"
-          >
-            Trusted by amazing clients.
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-body-mobile md:text-body-desktop text-apple-text-secondary dark:text-apple-text-secondary-dark max-w-3xl mx-auto mb-8"
-          >
-            Don&apos;t just take our word for it. Here&apos;s what our clients have to say about 
-            their experience working with Petriko Designers.
-          </motion.p>
-
-          {/* Real-time Status Indicator */}
+    <section className="bg-[var(--c-bg)] py-32 relative border-t border-black/5">
+      <div className="container px-6 md:px-20 max-w-[1400px] z-10 mx-auto">
+        <div className="flex flex-col items-center justify-center max-w-[640px] mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex items-center justify-center space-x-2 mb-8"
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true }}
+            className="flex flex-col items-center justify-center"
           >
-            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {isConnected ? 'Live reviews connected' : 'Offline mode'}
+            <span className="text-xs font-normal tracking-[0.2em] text-[#b19777] uppercase mb-4">
+              Client Feedback
             </span>
-            {realtimeReviews.length > 0 && (
-              <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
-                {realtimeReviews.length} new review{realtimeReviews.length !== 1 ? 's' : ''}
-              </span>
-            )}
-          </motion.div>
-
-          {/* Filter Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-wrap justify-center gap-4 mb-12"
-          >
-            {filters.map((filter) => {
-              const Icon = filter.icon
-              return (
-                <motion.button
-                  key={filter.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setActiveFilter(filter.id)
-                    setCurrentIndex(0) // Reset to first testimonial when filter changes
-                  }}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-full font-medium transition-all duration-200 ${
-                    activeFilter === filter.id
-                      ? 'bg-apple-blue text-white dark:bg-apple-blue-dark'
-                      : 'bg-white dark:bg-apple-gray-dark text-apple-text dark:text-apple-text-dark hover:bg-apple-gray dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <Icon size={18} />
-                  <span>{filter.name}</span>
-                </motion.button>
-              )
-            })}
-          </motion.div>
-
-          {/* Submit Review Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex justify-center mb-8"
-          >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowReviewForm(true)}
-              className="flex items-center space-x-2 px-8 py-4 bg-apple-blue hover:bg-blue-700 dark:bg-apple-blue-dark dark:hover:bg-blue-600 text-white rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              <Plus size={20} />
-              <span>Share Your Experience</span>
-            </motion.button>
+            <h2 className="display-font text-3xl md:text-5xl lg:text-6xl font-normal tracking-tight text-[#111] uppercase">
+              What they <span className="italic font-light">say</span>
+            </h2>
           </motion.div>
         </div>
 
-        {/* Featured Testimonial Carousel */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="relative bg-white dark:bg-apple-gray-dark rounded-3xl p-8 lg:p-12 shadow-2xl mb-16"
-        >
-          {/* Quote Icon */}
-          <div className="absolute top-8 left-8 opacity-10">
-            <Quote size={80} className="text-apple-blue dark:text-apple-blue-dark" />
-          </div>
-
-          {filteredTestimonials.length > 0 && (
-            <div className="relative z-10">
-              <motion.div
-                key={currentIndex}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ duration: 0.5 }}
-                className="text-center"
-              >
-                {/* Client Image */}
-                <div className="w-20 h-20 mx-auto mb-6 relative">
-                  <Image
-                    src={filteredTestimonials[currentIndex].image}
-                    alt={filteredTestimonials[currentIndex].name}
-                    width={80}
-                    height={80}
-                    className="w-full h-full object-cover rounded-full border-4 border-apple-blue/20 dark:border-apple-blue-dark/20"
-                  />
-                </div>
-
-                {/* Stars */}
-                <div className="flex justify-center space-x-1 mb-6">
-                  {renderStars(filteredTestimonials[currentIndex].rating)}
-                </div>
-
-                {/* Testimonial Text */}
-                <blockquote className="text-xl lg:text-2xl text-apple-text dark:text-apple-text-dark font-medium leading-relaxed mb-8 max-w-4xl mx-auto">
-                  &ldquo;{filteredTestimonials[currentIndex].text}&rdquo;
-                </blockquote>
-
-                {/* Client Info */}
-                <div className="space-y-2">
-                  <h4 className="text-lg font-semibold text-apple-text dark:text-apple-text-dark">
-                    {filteredTestimonials[currentIndex].name}
-                  </h4>
-                  <p className="text-apple-text-secondary dark:text-apple-text-secondary-dark">
-                    {filteredTestimonials[currentIndex].role} at {filteredTestimonials[currentIndex].company}
-                  </p>
-                  <p className="text-sm text-apple-blue dark:text-apple-blue-dark">
-                    {filteredTestimonials[currentIndex].project} • {filteredTestimonials[currentIndex].location}
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Navigation */}
-              {filteredTestimonials.length > 1 && (
-                <div className="flex justify-center items-center space-x-4 mt-8">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={prevTestimonial}
-                    className="w-12 h-12 bg-apple-gray/50 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-apple-blue hover:text-white dark:hover:bg-apple-blue-dark transition-all duration-200"
-                  >
-                    <ChevronLeft size={20} />
-                  </motion.button>
-
-                  {/* Dots Indicator */}
-                  <div className="flex space-x-2">
-                    {filteredTestimonials.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentIndex(index)}
-                        className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                          index === currentIndex
-                            ? 'bg-apple-blue dark:bg-apple-blue-dark'
-                            : 'bg-gray-300 dark:bg-gray-600'
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={nextTestimonial}
-                    className="w-12 h-12 bg-apple-gray/50 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-apple-blue hover:text-white dark:hover:bg-apple-blue-dark transition-all duration-200"
-                  >
-                    <ChevronRight size={20} />
-                  </motion.button>
-                </div>
-              )}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Testimonials Grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {filteredTestimonials.slice(0, 6).map((testimonial, index) => (
-            <motion.div
-              key={testimonial.id}
-              variants={cardVariants}
-              whileHover={{ y: -8 }}
-              className="bg-white dark:bg-apple-gray-dark rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              {/* Client Header */}
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 relative">
-                  <Image
-                    src={testimonial.image}
-                    alt={testimonial.name}
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-apple-text dark:text-apple-text-dark">
-                    {testimonial.name}
-                  </h4>
-                  <p className="text-sm text-apple-text-secondary dark:text-apple-text-secondary-dark">
-                    {testimonial.role}
-                  </p>
-                </div>
-              </div>
-
-              {/* Stars */}
-              <div className="flex space-x-1 mb-4">
-                {renderStars(testimonial.rating)}
-              </div>
-
-              {/* Testimonial Text */}
-              <p className="text-apple-text-secondary dark:text-apple-text-secondary-dark text-sm leading-relaxed mb-4 line-clamp-4">
-                &ldquo;{testimonial.text}&rdquo;
-              </p>
-
-              {/* Project Info */}
-              <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
-                <p className="text-xs text-apple-blue dark:text-apple-blue-dark font-medium">
-                  {testimonial.project}
-                </p>
-                <p className="text-xs text-apple-text-secondary dark:text-apple-text-secondary-dark">
-                  {testimonial.location}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Call to Action */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 1 }}
-          className="text-center mt-16"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-            className="px-8 py-4 bg-apple-blue hover:bg-blue-700 dark:bg-apple-blue-dark dark:hover:bg-blue-600 text-white rounded-full font-semibold text-lg transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            Join Our Happy Clients
-          </motion.button>
-        </motion.div>
+        <div className="flex justify-center gap-6 mt-20 [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)] max-h-[740px] overflow-hidden">
+          <TestimonialsColumn testimonials={firstColumn} duration={15} className="w-full max-w-sm" />
+          <TestimonialsColumn testimonials={secondColumn} duration={19} className="hidden md:block w-full max-w-sm" />
+          <TestimonialsColumn testimonials={thirdColumn} duration={17} className="hidden lg:block w-full max-w-sm" />
+        </div>
       </div>
-
-      {/* Review Form Modal */}
-      <AnimatePresence>
-        {showReviewForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowReviewForm(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Share Your Experience
-                </h3>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowReviewForm(false)}
-                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <X size={24} className="text-gray-500 dark:text-gray-400" />
-                </motion.button>
-              </div>
-
-              {/* Modal Content */}
-              <div className="p-6">
-                <ReviewForm onSubmit={handleReviewSubmit} />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
-  )
-}
+  );
+};
 
-export default Testimonials
+export default Testimonials;
