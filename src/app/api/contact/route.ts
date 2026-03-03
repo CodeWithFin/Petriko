@@ -1,38 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const TILIL_API_KEY = process.env.TILIL_API_KEY
-const TILIL_SHORTCODE = process.env.TILIL_SHORTCODE || 'PETRIKO'
-const SMS_ENDPOINT = process.env.SMS_ENDPOINT || 'https://api.tililtech.com/sms/v3/sendsms'
-const OWNER_PHONE = process.env.OWNER_PHONE || '254726452055'
-
-async function sendSMS(mobile: string, message: string) {
-  // Normalize phone number to international format (254XXXXXXXXX)
-  let normalized = mobile.replace(/\s+/g, '').replace(/[^0-9+]/g, '')
-  if (normalized.startsWith('+')) normalized = normalized.slice(1)
-  if (normalized.startsWith('07') || normalized.startsWith('01')) {
-    normalized = '254' + normalized.slice(1)
-  }
-  if (!normalized.startsWith('254')) {
-    normalized = '254' + normalized
-  }
-
-  const payload = {
-    api_key: TILIL_API_KEY,
-    mobile: normalized,
-    message,
-    sender_id: TILIL_SHORTCODE,
-  }
-
-  const res = await fetch(SMS_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-
-  const data = await res.json().catch(() => ({}))
-  console.log(`SMS to ${normalized}:`, data)
-  return data
-}
+import { sendEmail } from '@/lib/sms'
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,39 +13,57 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!TILIL_API_KEY) {
-      console.error('TILIL_API_KEY is not configured')
-      return NextResponse.json(
-        { success: false, message: 'SMS service not configured.' },
-        { status: 500 }
-      )
+    const OWNER_EMAIL = process.env.OWNER_EMAIL || 'petricolimited@gmail.com'
+
+    // Critical: notify owner
+    await sendEmail({
+      to: OWNER_EMAIL,
+      subject: `New Enquiry from ${name} – Petriko Website`,
+      replyTo: email,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;color:#111;">
+          <h2 style="font-size:22px;margin-bottom:24px;border-bottom:1px solid #eee;padding-bottom:16px;">
+            New Website Enquiry
+          </h2>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="padding:8px 0;color:#888;width:120px;">Name</td><td style="padding:8px 0;font-weight:500;">${name}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;">Email</td><td style="padding:8px 0;"><a href="mailto:${email}" style="color:#b19777;">${email}</a></td></tr>
+            <tr><td style="padding:8px 0;color:#888;">Phone</td><td style="padding:8px 0;">${phone || 'Not provided'}</td></tr>
+          </table>
+          <div style="margin-top:24px;">
+            <p style="color:#888;margin-bottom:8px;">Message</p>
+            <p style="background:#f9f9f9;padding:16px;border-radius:4px;line-height:1.6;">${message}</p>
+          </div>
+        </div>
+      `,
+    })
+
+    // Best-effort: confirmation to client (may fail without a verified domain)
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'We received your message – Petriko Interior Design',
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;color:#111;">
+            <h2 style="font-size:22px;margin-bottom:8px;">Thank you, ${name}.</h2>
+            <p style="color:#555;line-height:1.7;margin-top:0;">
+              We have received your message and one of our designers will get back to you within 24 hours.
+            </p>
+            <p style="color:#555;line-height:1.7;">
+              For urgent enquiries, you can reach us directly at
+              <a href="tel:+254726452055" style="color:#b19777;">0726 452055</a>.
+            </p>
+            <p style="margin-top:32px;color:#b19777;font-size:13px;letter-spacing:0.05em;">PETRIKO INTERIOR DESIGN</p>
+          </div>
+        `,
+      })
+    } catch (clientErr) {
+      console.warn('[contact] Client confirmation email skipped:', clientErr)
     }
 
-    const results: { owner?: unknown; client?: unknown } = {}
-
-    // SMS to owner with client details
-    const ownerMessage =
-      `New enquiry from Petriko website:\n` +
-      `Name: ${name}\n` +
-      `Email: ${email}\n` +
-      `Phone: ${phone || 'Not provided'}\n` +
-      `Message: ${message}`
-
-    results.owner = await sendSMS(OWNER_PHONE, ownerMessage)
-
-    // SMS to client (only if they provided a phone number)
-    if (phone && phone.trim()) {
-      const clientMessage =
-        `Hi ${name}, thank you for reaching out to Petriko Interior Design. ` +
-        `We have received your message and will contact you within 24 hours. ` +
-        `For urgent enquiries call: 0726 452055.`
-
-      results.client = await sendSMS(phone, clientMessage)
-    }
-
-    return NextResponse.json({ success: true, results })
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Contact API error:', error)
+    console.error('[contact] Error:', error)
     return NextResponse.json(
       { success: false, message: 'Failed to send message. Please try again.' },
       { status: 500 }

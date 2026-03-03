@@ -1,36 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
+import { sendEmail } from '@/lib/sms'
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if environment variables are configured
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-      console.error('Email configuration missing: GMAIL_USER or GMAIL_APP_PASSWORD not set')
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Email service not configured. Please contact us directly at finley.mwachia12@gmail.com or call 0726 452055.',
-          errorType: 'CONFIG_MISSING'
-        },
-        { status: 500 }
-      )
-    }
+    const OWNER_EMAIL = process.env.OWNER_EMAIL || 'petricolimited@gmail.com'
 
-    // Check if Gmail app password is still the placeholder
-    if (process.env.GMAIL_APP_PASSWORD === 'your_gmail_app_password_here') {
-      console.error('Gmail app password is still placeholder')
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Email service not fully configured. Please contact us directly at finley.mwachia12@gmail.com or call 0726 452055.',
-          errorType: 'CONFIG_PLACEHOLDER'
-        },
-        { status: 500 }
-      )
-    }
-
-    // Handle both FormData and JSON content types
+    // Accept both JSON and multipart/form-data
     const contentType = request.headers.get('content-type') || ''
+
     let name: string
     let email: string
     let phone: string
@@ -38,21 +15,17 @@ export async function POST(request: NextRequest) {
     let projectType: string
     let message: string
     let budget: string
-    let files: File[] = []
 
     if (contentType.includes('multipart/form-data')) {
-      // Handle FormData (with file uploads)
-      const formData = await request.formData()
-      name = formData.get('name') as string
-      email = formData.get('email') as string
-      phone = formData.get('phone') as string
-      location = formData.get('location') as string
-      projectType = formData.get('projectType') as string
-      message = formData.get('message') as string
-      budget = formData.get('budget') as string
-      files = formData.getAll('files') as File[]
+      const fd = await request.formData()
+      name = fd.get('name') as string
+      email = fd.get('email') as string
+      phone = fd.get('phone') as string
+      location = fd.get('location') as string
+      projectType = fd.get('projectType') as string
+      message = fd.get('message') as string
+      budget = fd.get('budget') as string
     } else {
-      // Handle JSON (without file uploads)
       const body = await request.json()
       name = body.name
       email = body.email
@@ -62,110 +35,75 @@ export async function POST(request: NextRequest) {
       message = body.message
       budget = body.budget
     }
-    
-    // Validate required fields
+
     if (!name || !email || !phone || !location || !projectType || !message) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Please fill in all required fields.',
-          errorType: 'VALIDATION_ERROR'
-        },
+        { success: false, message: 'Please fill in all required fields.' },
         { status: 400 }
       )
     }
 
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-      }
+    // Detailed notification to owner
+    await sendEmail({
+      to: OWNER_EMAIL,
+      subject: `New Quote Request: ${projectType} – ${name}`,
+      replyTo: email,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;color:#111;">
+          <h2 style="font-size:22px;margin-bottom:24px;border-bottom:1px solid #eee;padding-bottom:16px;">
+            New Quote Request – Petriko
+          </h2>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td style="padding:8px 0;color:#888;width:140px;">Name</td><td style="padding:8px 0;font-weight:500;">${name}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;">Email</td><td style="padding:8px 0;"><a href="mailto:${email}" style="color:#b19777;">${email}</a></td></tr>
+            <tr><td style="padding:8px 0;color:#888;">Phone</td><td style="padding:8px 0;"><a href="tel:${phone}" style="color:#b19777;">${phone}</a></td></tr>
+            <tr><td style="padding:8px 0;color:#888;">Location</td><td style="padding:8px 0;">${location}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;">Service</td><td style="padding:8px 0;">${projectType}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;">Budget</td><td style="padding:8px 0;">${budget || 'Not specified'}</td></tr>
+          </table>
+          <div style="margin-top:24px;">
+            <p style="color:#888;margin-bottom:8px;">Project Details</p>
+            <p style="background:#f9f9f9;padding:16px;border-radius:4px;line-height:1.6;">${message}</p>
+          </div>
+        </div>
+      `,
     })
 
-    // Prepare email content
-    const emailHtml = `
-      <h2>New Quote Request from Website</h2>
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h3>Client Information:</h3>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Location:</strong> ${location}</p>
-        
-        <h3>Project Details:</h3>
-        <p><strong>Service Type:</strong> ${projectType}</p>
-        <p><strong>Budget Range:</strong> ${budget || 'Not specified'}</p>
-        <p><strong>Description:</strong></p>
-        <p style="background: #f5f5f5; padding: 15px; border-radius: 5px;">${message}</p>
-        
-        <h3>Contact Information:</h3>
-        <p>Reply to this email or call ${phone} to follow up.</p>
-        
-        ${files.length > 0 ? `<p><strong>Note:</strong> ${files.length} reference image(s) attached.</p>` : ''}
-      </div>
-    `
-
-    // Prepare attachments
-    const attachments = await Promise.all(
-      files.map(async (file, index) => {
-        const buffer = Buffer.from(await file.arrayBuffer())
-        return {
-          filename: file.name || `image-${index + 1}.jpg`,
-          content: buffer,
-        }
+    // Best-effort: confirmation to client (may fail without a verified domain)
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Your Quote Request – Petriko Interior Design',
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;color:#111;">
+            <h2 style="font-size:22px;margin-bottom:8px;">Thank you, ${name}.</h2>
+            <p style="color:#555;line-height:1.7;margin-top:0;">
+              We have received your <strong>${projectType}</strong> project enquiry and will contact you within 24 hours
+              to discuss further and arrange a site visit if needed.
+            </p>
+            <p style="color:#555;line-height:1.7;">
+              For urgent enquiries, reach us at
+              <a href="tel:+254726452055" style="color:#b19777;">0726 452055</a>.
+            </p>
+            <p style="margin-top:32px;color:#b19777;font-size:13px;letter-spacing:0.05em;">PETRIKO INTERIOR DESIGN</p>
+          </div>
+        `,
       })
-    )
-
-    // Send email
-    await transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to: process.env.GMAIL_USER, // Send to the same email account for testing
-      subject: `New Quote Request - ${projectType} Project in ${location}`,
-      html: emailHtml,
-      attachments,
-      replyTo: email
-    })
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Quote request sent successfully' 
-    })
-
-  } catch (error) {
-    console.error('Error sending quote request:', error)
-    
-    // Check for specific email-related errors
-    if (error instanceof Error) {
-      if (error.message.includes('Invalid login')) {
-        return NextResponse.json(
-          { 
-            success: false, 
-            message: 'Email authentication failed. Please contact us directly at finley.mwachia12@gmail.com or call 0726 452055.',
-            errorType: 'AUTH_ERROR'
-          },
-          { status: 500 }
-        )
-      }
-      
-      if (error.message.includes('getaddrinfo ENOTFOUND')) {
-        return NextResponse.json(
-          { 
-            success: false, 
-            message: 'Network connection error. Please check your internet connection and try again.',
-            errorType: 'NETWORK_ERROR'
-          },
-          { status: 500 }
-        )
-      }
+    } catch (clientErr) {
+      console.warn('[quote-request] Client confirmation email skipped:', clientErr)
     }
-    
+
+
+    return NextResponse.json({
+      success: true,
+      message: 'Quote request sent successfully',
+    })
+  } catch (error) {
+    console.error('[quote-request] Error:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Unable to send quote request at the moment. Please contact us directly at finley.mwachia12@gmail.com or call 0726 452055.',
-        errorType: 'UNKNOWN_ERROR'
+      {
+        success: false,
+        message: 'Failed to send quote request. Please call 0726 452055 directly.',
       },
       { status: 500 }
     )
